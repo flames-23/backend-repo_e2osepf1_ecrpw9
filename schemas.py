@@ -1,48 +1,45 @@
 """
-Database Schemas
+Database Schemas for BusinessInsight
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model represents a MongoDB collection.
+The collection name is the lowercase of the class name.
 """
-
+from typing import List, Optional
 from pydantic import BaseModel, Field
-from typing import Optional
+from datetime import datetime
 
-# Example schemas (replace with your own):
-
-class User(BaseModel):
+class Companyquery(BaseModel):
     """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
+    Stores user search queries so we can analyze usage and cache results.
+    Collection: "companyquery"
     """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    company: str = Field(..., description="Company name or ticker")
+    user_id: Optional[str] = Field(None, description="Optional user identifier")
+    locale: Optional[str] = Field(None, description="Locale or region context")
 
-class Product(BaseModel):
+class Insight(BaseModel):
     """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
+    Stores consolidated business insight snapshot for a company.
+    Collection: "insight"
     """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+    company: str = Field(..., description="Company name")
+    summary: str = Field(..., description="High-level AI-style summary")
+    financials: dict = Field(default_factory=dict, description="Revenue, profit, valuation, etc.")
+    market_trends: List[str] = Field(default_factory=list, description="Bulleted trend items")
+    competitors: List[dict] = Field(default_factory=list, description="List of competitors with key stats")
+    pricing: dict = Field(default_factory=dict, description="Pricing/business model overview")
+    projections: dict = Field(default_factory=dict, description="Simple forward-looking projections")
+    last_refreshed: datetime = Field(default_factory=datetime.utcnow, description="Last refresh timestamp")
 
-# Add your own schemas here:
-# --------------------------------------------------
-
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class News(BaseModel):
+    """
+    Stores normalized news items per company for quick retrieval.
+    Collection: "news"
+    """
+    company: str = Field(..., description="Company this news relates to")
+    title: str
+    url: str
+    source: str
+    published_at: datetime
+    summary: Optional[str] = None
+    tags: List[str] = Field(default_factory=list)
